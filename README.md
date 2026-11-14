@@ -17,9 +17,15 @@ The included skill and session hook guide Claude toward available IDE tools when
 
 Requires **VS Code Desktop 1.109+**, **Claude Code with plugin support**, and **Node.js 20+** on Claude's PATH. Use a recent VS Code version for browser tools.
 
-1. Download [vs-control-bridge-0.0.1.vsix](https://github.com/morzan1001/VS-Control/releases/download/0.0.1/vs-control-bridge-0.0.1.vsix).
+1. Install [VS Control — Claude Code Bridge](https://marketplace.visualstudio.com/items?itemName=morzan1001.vs-control-bridge) from the VS Code Marketplace, or run:
 
-2. In VS Code, use **Extensions: Install from VSIX…** to install it. Open a trusted workspace and reload the window if needed.
+   ```sh
+   code --install-extension morzan1001.vs-control-bridge
+   ```
+
+   Alternatively, download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**. When upgrading from `0.0.1`, uninstall the old VS Control extension first because the publisher ID changed.
+
+2. Open a trusted workspace and reload the window if needed.
 
 3. Install the Claude Code plugin:
 

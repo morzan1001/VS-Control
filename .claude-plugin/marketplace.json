@@ -3,6 +3,6 @@
   "owner": { "name": "VS Control" },
   "metadata": { "description": "Native VS Code tools for Claude Code." },
   "plugins": [
-    { "name": "vs-control", "version": "0.0.1", "source": "./plugin", "description": "Control VS Code's native browser, tests, editor, tasks and debugger from Claude Code." }
+    { "name": "vs-control", "version": "0.0.2", "source": "./plugin", "description": "Control VS Code's native browser, tests, editor, tasks and debugger from Claude Code." }
   ]
 }

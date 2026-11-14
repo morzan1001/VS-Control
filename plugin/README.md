@@ -6,7 +6,14 @@ Use VS Code's browser, tests, diagnostics, code navigation, tasks, and debug con
 
 Requires **Node.js 20+** on Claude's PATH and Claude Code with plugin support.
 
-1. Install `vs-control-bridge-0.0.1.vsix` in VS Code using **Extensions: Install from VSIX…** and open a trusted workspace.
+1. Install the [companion extension](https://marketplace.visualstudio.com/items?itemName=morzan1001.vs-control-bridge) and open a trusted workspace:
+
+   ```sh
+   code --install-extension morzan1001.vs-control-bridge
+   ```
+
+   For manual installation, download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**. Uninstall the old extension first if upgrading from `0.0.1`.
+
 2. Install this plugin in Claude Code:
 
    ```text

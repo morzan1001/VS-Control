@@ -6,7 +6,14 @@ Connect VS Code to the **VS Control Claude Code plugin** through a local MCP bri
 
 Requires **VS Code Desktop 1.109+**. Use a recent version for browser tools. The Claude Code plugin requires **Node.js 20+** on Claude's PATH.
 
-1. Install `vs-control-bridge-0.0.1.vsix` using **Extensions: Install from VSIX…**.
+1. Install from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=morzan1001.vs-control-bridge), or run:
+
+   ```sh
+   code --install-extension morzan1001.vs-control-bridge
+   ```
+
+   You can also download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**. Uninstall the old extension first if upgrading from `0.0.1`; the publisher ID changed.
+
 2. Open a trusted workspace. Reload the window if needed; **VS Control** appears in the status bar.
 3. Install the companion plugin in Claude Code:
 

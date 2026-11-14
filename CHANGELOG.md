@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.2 — 2026-11-14
+
+- Use Marketplace publisher `morzan1001` for the companion extension.
+- Publish verified GitHub release packages to the VS Code Marketplace through Trusted Publishing.
+- Update installation instructions for the Marketplace and keep VSIX downloads available.
+
 ## 0.0.1 — 2026-11-14
 
 - Connect Claude Code to VS Code through a local authenticated MCP bridge.
@@ -7,4 +13,4 @@
 - Expose editor context, diagnostics, navigation, tasks, and debug configuration helpers.
 - Recommend relevant IDE tools through a skill and SessionStart hook.
 - Support workspace discovery, explicit window selection, cancellation, and timeouts.
-- Provide portable VSIX and plugin packages, a local macOS runtime option, and English documentation.
+- Provide portable VSIX and plugin packages.

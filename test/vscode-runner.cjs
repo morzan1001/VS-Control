@@ -5,6 +5,8 @@ const fs = require('node:fs/promises');
 const http = require('node:http');
 const vscode = require('vscode');
 const { BridgeClient } = require('../plugin/lib/client.cjs');
+const manifest = require('../extension/package.json');
+const fixtureManifest = require('./fixture-extension/package.json');
 
 exports.run = async () => {
   const checks = [];
@@ -13,10 +15,10 @@ exports.run = async () => {
   const signal = () => new AbortController().signal;
   const check = (name, fn) => fn().then(() => { checks.push({ name, passed: true }); console.log(`PASS ${name}`); });
   try {
-    const extension = vscode.extensions.getExtension('vs-control.vs-control-bridge');
+    const extension = vscode.extensions.getExtension(`${manifest.publisher}.${manifest.name}`);
     assert.ok(extension, 'Companion extension found');
     await extension.activate();
-    await vscode.extensions.getExtension('vs-control.integration-fixture').activate();
+    await vscode.extensions.getExtension(`${fixtureManifest.publisher}.${fixtureManifest.name}`).activate();
     await vscode.workspace.getConfiguration('vsControl').update('additionalToolNames', ['vscontrol_fixture_echo', 'vscontrol_fixture_image', 'vscontrol_fixture_error'], vscode.ConfigurationTarget.Global);
     const cwd = vscode.workspace.workspaceFolders[0].uri.fsPath;
     const client = new BridgeClient({ cwd });

@@ -1,6 +1,6 @@
 {
   "name": "vs-control",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "description": "Give Claude Code control of VS Code's browser, tests, and editor.",
   "repository": { "type": "git", "url": "https://github.com/morzan1001/VS-Control.git" },

@@ -31,7 +31,7 @@ This requires VS Code Desktop and uses a temporary profile. Set `VSCODE_EXECUTAB
 ## Releases
 
 1. Update the changelog, run the checks, and merge the changes through a pull request.
-2. On the merged commit, create an annotated tag matching the package version, for example `git tag -a 0.0.1 -m "Release 0.0.1"`. Use no `v` prefix.
+2. On the merged commit, create an annotated tag matching the package version, for example `git tag -a 0.0.2 -m "Release 0.0.2"`. Use no `v` prefix.
 3. Push the tag and wait for CI to pass.
 4. Manually run **Draft release** with the tag. It builds the VSIX, plugin ZIP, and checksums using release notes from the changelog.
 5. Review and publish the draft in GitHub.
@@ -46,7 +46,7 @@ One-time setup in your Marketplace publisher's **Trusted Publishing** settings:
 
 | Field | Value |
 | --- | --- |
-| Publisher ID | `vs-control` (must match the packaged manifest) |
+| Publisher ID | `morzan1001` (must match the packaged manifest) |
 | Repository owner | `morzan1001` |
 | Repository | `VS-Control` |
 | Workflow | `publish-marketplace.yml` |
@@ -54,4 +54,4 @@ One-time setup in your Marketplace publisher's **Trusted Publishing** settings:
 
 After creating the publisher and policy, set the GitHub repository variable `MARKETPLACE_PUBLISHING_ENABLED` to `true`. No PAT or repository secret is needed.
 
-Future published GitHub releases trigger publishing automatically. For an existing release such as `0.0.1`, run the workflow manually on `main`, enter the tag, and enable **publish**. Leave it unchecked to verify without publishing. If the publisher ID must change, create a new version; do not replace existing release assets.
+Published GitHub releases trigger publishing automatically. To retry a release, run the workflow manually on `main`, enter the tag, and enable **publish**. Leave it unchecked to verify without publishing. Version `0.0.1` used a different publisher and cannot be published by this workflow; use `0.0.2` or later. Never replace existing release assets.
