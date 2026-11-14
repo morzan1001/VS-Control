@@ -11,10 +11,11 @@
     "build": "node scripts/build.cjs",
     "test": "node scripts/build.cjs && node --test test/*.test.cjs",
     "test:integration": "node scripts/test-vscode.cjs",
+    "test:marketplace": "python3 -B -m unittest discover -s test -p '*_test.py'",
     "package": "node scripts/build.cjs && python3 scripts/package.py",
     "check": "node scripts/check.cjs",
     "verify:package": "python3 scripts/verify-package.py",
-    "verify": "npm run check && npm test && npm run package && npm run verify:package",
+    "verify": "npm run check && npm test && npm run test:marketplace && npm run package && npm run verify:package",
     "prepare:local": "node scripts/prepare-local.cjs"
   },
   "license": "MIT"

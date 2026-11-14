@@ -40,6 +40,8 @@ jobs:
         run: npm run check
       - name: Run unit, protocol, and transport tests
         run: npm test
+      - name: Test Marketplace release verification
+        run: npm run test:marketplace
       - name: Build portable packages
         run: npm run package
       - name: Verify checksums, reproducibility, and extracted MCP startup
