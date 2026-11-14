@@ -12,7 +12,7 @@ Requires **Node.js 20+** on Claude's PATH and Claude Code with plugin support.
    code --install-extension morzan1001.vs-control-bridge
    ```
 
-   For manual installation, download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**. Uninstall the old extension first if upgrading from `0.0.1`.
+   For manual installation, download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**.
 
 2. Install this plugin in Claude Code:
 

@@ -12,7 +12,7 @@ Requires **VS Code Desktop 1.109+**. Use a recent version for browser tools. The
    code --install-extension morzan1001.vs-control-bridge
    ```
 
-   You can also download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**. Uninstall the old extension first if upgrading from `0.0.1`; the publisher ID changed.
+   You can also download the [VSIX from GitHub Releases](https://github.com/morzan1001/VS-Control/releases/latest) and use **Extensions: Install from VSIX…**.
 
 2. Open a trusted workspace. Reload the window if needed; **VS Control** appears in the status bar.
 3. Install the companion plugin in Claude Code:
