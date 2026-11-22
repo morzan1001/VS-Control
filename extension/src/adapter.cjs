@@ -25,7 +25,10 @@ const BUILTINS = [
   definition('vscode_context', 'Read active editor, open tabs, workspace folders and optional selected text. Includes unsaved editor state.', { includeSelection: bool }, [], true),
   definition('vscode_diagnostics', 'Read actual language-service diagnostics from the VS Code Problems panel. Lines and columns are zero-based.', { path: string, severity: { type: 'string', enum: ['error', 'warning', 'information', 'hint'] } }, [], true),
   definition('vscode_open_file', 'Open a workspace file and reveal a zero-based line and column.', { path: string, line: integer, column: integer, preview: bool }, ['path']),
-  definition('vscode_symbols', 'Use installed language providers for symbols, definitions or references. Positions are zero-based.', { path: string, kind: { type: 'string', enum: ['document', 'definition', 'references'] }, line: integer, column: integer }, ['path'], true),
+  definition('vscode_symbols', 'Use installed language providers. With path and a zero-based line and column: document symbols, definition, typeDefinition, implementation, references, hover (types and docs), codeActions (quick fixes and refactorings with their edits, not applied; endLine and endColumn widen the range), callers or callees (call hierarchy). kind=workspace finds symbols matching query, with no path.', {
+    path: string, kind: { type: 'string', enum: ['document', 'definition', 'typeDefinition', 'implementation', 'references', 'hover', 'codeActions', 'callers', 'callees', 'workspace'] },
+    line: integer, column: integer, endLine: integer, endColumn: integer, query: string
+  }, [], true),
   definition('vscode_tasks', 'List workspace tasks and task executions observed by this bridge. Task IDs are valid until the next list call.', {}, [], true),
   definition('vscode_run_task', 'Run a task ID returned by vscode_tasks in the real VS Code task system. Returns an execution ID; inspect vscode_task_status for completion.', { id: string }, ['id']),
   definition('vscode_task_status', 'Read a task execution status, including exit code when supplied by the task provider. Does not read historical terminal output.', { id: string }, ['id'], true),
@@ -163,16 +166,45 @@ function createAdapter(vscode, subscriptions = []) {
           return text({ opened: uri.toString(), position: { line: position.line, column: position.character } });
         }
         case 'vscode_symbols': {
+          const kind = args.kind || 'document';
+          const run = (command, ...rest) => vscode.commands.executeCommand(command, ...rest).then(r => r || []);
+          const symbolKind = k => vscode.SymbolKind?.[k] ?? k;
+          const location = l => ({ uri: (l.uri || l.targetUri).toString(), range: range(l.range || l.targetSelectionRange) });
+          const clip = value => typeof value === 'string' && value.length > 2000 ? `${value.slice(0, 2000)}…` : value;
+          if (kind === 'workspace') {
+            if (!args.query) throw new Error('kind=workspace needs a query.');
+            const found = await run('vscode.executeWorkspaceSymbolProvider', args.query);
+            return text({ symbols: found.slice(0, 200).map(s => ({ name: s.name, kind: symbolKind(s.kind), container: s.containerName || undefined, ...location(s.location) })), total: found.length, truncated: found.length > 200 });
+          }
           const uri = await uriFor(args.path);
           await vscode.workspace.openTextDocument(uri);
-          const kind = args.kind || 'document';
           if (kind === 'document') {
             const walk = list => list?.map(s => ({ name: s.name, kind: s.kind, range: range(s.range || s.location?.range), children: walk(s.children) }));
             return text(walk(await vscode.commands.executeCommand('vscode.executeDocumentSymbolProvider', uri)) || []);
           }
-          const command = kind === 'definition' ? 'vscode.executeDefinitionProvider' : 'vscode.executeReferenceProvider';
-          const locations = await vscode.commands.executeCommand(command, uri, new vscode.Position(args.line || 0, args.column || 0));
-          return text((locations || []).map(l => ({ uri: (l.uri || l.targetUri).toString(), range: range(l.range || l.targetSelectionRange) })));
+          const position = new vscode.Position(args.line || 0, args.column || 0);
+          if (kind === 'hover') return text((await run('vscode.executeHoverProvider', uri, position)).map(h => ({ contents: h.contents.map(c => clip(typeof c === 'string' ? c : c.value)).filter(Boolean), range: range(h.range) })).filter(h => h.contents.length));
+          if (kind === 'codeActions') {
+            const end = new vscode.Position(args.endLine ?? position.line, args.endColumn ?? position.character);
+            const actions = await run('vscode.executeCodeActionProvider', uri, new vscode.Range(position, end), undefined, 50);
+            const edits = edit => edit && edit.entries().flatMap(([u, list]) => list.map(e => ({ uri: u.toString(), range: range(e.range), newText: clip(e.newText) })));
+            // The provider returns CodeActions and bare Commands; neither is applied here.
+            return text(actions.slice(0, 50).map(a => typeof a.command === 'string' ? { title: a.title, command: a.command } : {
+              title: a.title, kind: a.kind?.value, preferred: a.isPreferred || undefined, disabled: a.disabled?.reason,
+              diagnostics: a.diagnostics?.map(d => d.message), edits: edits(a.edit), command: a.command?.command
+            }));
+          }
+          if (kind === 'callers' || kind === 'callees') {
+            const describe = item => ({ name: item.name, kind: symbolKind(item.kind), detail: item.detail || undefined, uri: item.uri.toString(), range: range(item.selectionRange) });
+            const result = [];
+            for (const item of (await run('vscode.prepareCallHierarchy', uri, position)).slice(0, 5)) {
+              const calls = await run(kind === 'callers' ? 'vscode.provideIncomingCalls' : 'vscode.provideOutgoingCalls', item);
+              result.push({ symbol: describe(item), calls: calls.slice(0, 200).map(c => ({ ...describe(c.from || c.to), ranges: c.fromRanges.map(range) })) });
+            }
+            return text(result);
+          }
+          const command = { definition: 'vscode.executeDefinitionProvider', typeDefinition: 'vscode.executeTypeDefinitionProvider', implementation: 'vscode.executeImplementationProvider', references: 'vscode.executeReferenceProvider' }[kind];
+          return text((await run(command, uri, position)).map(location));
         }
         case 'vscode_tasks': {
           listedTasks = new Map((await vscode.tasks.fetchTasks()).map(t => [randomUUID(), t]));

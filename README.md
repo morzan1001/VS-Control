@@ -8,7 +8,7 @@ Works with the **Claude Code CLI and VS Code extension** through a local MCP bri
 
 - **Browser:** Open pages, click, type, read content, and take screenshots in VS Code's integrated browser.
 - **Tests:** Run tests, inspect failures, and use the Test Explorer.
-- **Editor:** Read diagnostics and selections, open files, and find symbols, definitions, and references.
+- **Editor:** Read diagnostics and selections, open files, find symbols, definitions, implementations, references, callers and callees, and read hover types and code actions.
 - **Tasks and debugging:** Run configured tasks, check exit codes, and start or stop named debug configurations.
 
 The included skill and session hook guide Claude toward available IDE tools when relevant.

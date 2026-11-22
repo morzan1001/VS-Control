@@ -129,6 +129,19 @@ exports.run = async () => {
       assert.ok(!result.isError, JSON.stringify(result));
       assert.equal(JSON.parse(result.content[0].text).dispatched, 'workbench.view.extension.test');
     });
+    await check('language features read hover and workspace symbols from the TypeScript server', async () => {
+      const symbols = async args => JSON.parse((await client.call('vscode_symbols', args, signal())).content[0].text);
+      // The built-in TypeScript server starts lazily; wait, bounded, for its first answer.
+      let hover = [];
+      const deadline = Date.now() + 30000;
+      while (!JSON.stringify(hover).includes('greeting') && Date.now() < deadline) {
+        hover = await symbols({ path: file, kind: 'hover', line: 0, column: 10 });
+        if (!JSON.stringify(hover).includes('greeting')) await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      assert.match(JSON.stringify(hover), /function greeting\(name/);
+      const found = await symbols({ kind: 'workspace', query: 'greeting' });
+      assert.ok(found.symbols.some(s => s.name.startsWith('greeting') && s.uri.endsWith('sample.js') && s.range.start.line === 0), JSON.stringify(found));
+    });
     await check('real task execution reports its process exit code', async () => {
       const task = new vscode.Task({ type: 'vs-control-fixture' }, vscode.TaskScope.Workspace, 'Fixture task', 'VS Control', new vscode.ProcessExecution('/usr/bin/true'));
       disposables.push(vscode.tasks.registerTaskProvider('vs-control-fixture', { provideTasks: () => [task], resolveTask: t => t }));
