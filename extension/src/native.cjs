@@ -7,8 +7,9 @@ const GROUPS = {
   browser: ['open_browser_page', 'list_browser_pages', 'read_page', 'screenshot_page', 'navigate_page', 'click_element', 'type_in_page', 'hover_element', 'drag_element', 'handle_dialog', 'run_playwright_code', 'close_browser_page', 'openBrowserPage', 'listBrowserPages', 'readPage', 'screenshotPage', 'navigatePage', 'clickElement', 'typeInPage', 'hoverElement', 'dragElement', 'handleDialog', 'runPlaywrightCode'],
   testing: ['runTests', 'testFailure', 'runTestsWithCoverage', 'copilot_runTests', 'copilot_testFailure', 'copilot_runTestsWithCoverage'],
   terminal: ['run_in_terminal', 'get_terminal_output', 'terminal_last_command', 'terminal_selection', 'create_and_run_task', 'run_task', 'get_task_output', 'send_to_terminal', 'kill_terminal'],
-  notebook: ['edit_notebook_file', 'run_notebook_cell', 'read_notebook_cell_output', 'get_notebook_summary'],
-  code: ['read_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'list_code_usages', 'get_errors', 'get_changed_files', 'rename', 'usages', 'vscode_listCodeUsages', 'vscode_renameSymbol']
+  // GitHub Copilot Chat renamed these tools with a copilot_ prefix; keep both for older builds.
+  notebook: ['edit_notebook_file', 'run_notebook_cell', 'read_notebook_cell_output', 'get_notebook_summary', 'copilot_editNotebook', 'copilot_runNotebookCell', 'copilot_readNotebookCellOutput', 'copilot_getNotebookSummary'],
+  code: ['read_file', 'list_dir', 'file_search', 'grep_search', 'semantic_search', 'list_code_usages', 'get_errors', 'get_changed_files', 'rename', 'usages', 'vscode_listCodeUsages', 'vscode_renameSymbol', 'copilot_readFile', 'copilot_listDirectory', 'copilot_findFiles', 'copilot_findTextInFiles', 'copilot_searchCodebase', 'copilot_searchWorkspaceSymbols', 'copilot_getErrors', 'copilot_getChangedFiles']
 };
 function groupFor(name) { return Object.keys(GROUPS).find(g => GROUPS[g].includes(name)) || 'other'; }
 function recursive(name) { return /^mcp[_.-]|^vs_control[_.-]|^vscode_native_/i.test(name); }

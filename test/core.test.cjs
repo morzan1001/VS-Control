@@ -51,6 +51,14 @@ test('native exposure uses exact IDs, respects settings and blocks MCP recursion
   assert.equal(native.allowed({ name: 'mcp_vscode_open_browser_page' }, settings), false);
   assert.equal(native.allowed({ name: 'runTests' }, { groups: [] }), false);
 });
+test('notebook and code groups match current and older tool IDs', () => {
+  // IDs seen in vscode.lm.tools with GitHub Copilot Chat on VS Code 1.147, and their older names.
+  for (const [group, ids] of Object.entries({ notebook: ['copilot_runNotebookCell', 'run_notebook_cell'], code: ['copilot_readFile', 'read_file', 'copilot_searchWorkspaceSymbols', 'vscode_listCodeUsages'] })) {
+    for (const id of ids) assert.equal(native.groupFor(id), group, id);
+  }
+  assert.equal(native.allowed({ name: 'copilot_getNotebookSummary' }, { groups: ['notebook'] }), true);
+  assert.equal(native.allowed({ name: 'copilot_applyPatch' }, { groups: ['code', 'notebook'] }), false);
+});
 test('native names fit MCP constraints without escaping collisions', () => {
   const names = ['a.b', 'a_b', 'x'.repeat(200), 'open_browser_page'];
   const mapped = names.map(native.mcpName);

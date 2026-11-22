@@ -66,7 +66,7 @@ Browser and testing tools are enabled by default. To also expose available termi
 }
 ```
 
-Available tools depend on VS Code and installed extensions. The bridge and Claude must run on the same host as the same user. Windows and remote setups have not been tested.
+Available tools depend on VS Code and installed extensions; most notebook and code tools come from GitHub Copilot Chat. The bridge and Claude must run on the same host as the same user. Windows and remote setups have not been tested.
 
 ## Development
 
