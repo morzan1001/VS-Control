@@ -129,6 +129,13 @@ exports.run = async () => {
       assert.ok(!result.isError, JSON.stringify(result));
       assert.equal(JSON.parse(result.content[0].text).dispatched, 'workbench.view.extension.test');
     });
+    await check('element picker is registered, reports readiness and holds nothing yet', async () => {
+      assert.ok((await vscode.commands.getCommands(true)).includes('vsControl.pickElement'));
+      const capabilities = JSON.parse((await client.call('vscode_capabilities', {}, signal())).content[0].text);
+      assert.equal(typeof capabilities.elementPicker.ready, 'boolean', JSON.stringify(capabilities.elementPicker));
+      const held = JSON.parse((await client.call('vscode_picked_element', {}, signal())).content[0].text);
+      assert.equal(held.picked, false);
+    });
     await check('real task execution reports its process exit code', async () => {
       const task = new vscode.Task({ type: 'vs-control-fixture' }, vscode.TaskScope.Workspace, 'Fixture task', 'VS Control', new vscode.ProcessExecution('/usr/bin/true'));
       disposables.push(vscode.tasks.registerTaskProvider('vs-control-fixture', { provideTasks: () => [task], resolveTask: t => t }));

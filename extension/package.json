@@ -18,8 +18,17 @@
     "commands": [
       { "command": "vsControl.status", "title": "VS Control: Show Connection and Tools" },
       { "command": "vsControl.restart", "title": "VS Control: Restart Bridge" },
-      { "command": "vsControl.stop", "title": "VS Control: Stop Bridge" }
+      { "command": "vsControl.stop", "title": "VS Control: Stop Bridge" },
+      { "command": "vsControl.pickElement", "title": "VS Control: Pick Element for Claude", "icon": "$(inspect)" }
     ],
+    "keybindings": [
+      { "command": "vsControl.pickElement", "key": "ctrl+alt+c", "mac": "cmd+alt+c", "when": "activeEditor == 'workbench.editor.browser'" }
+    ],
+    "menus": {
+      "editor/title": [
+        { "command": "vsControl.pickElement", "when": "activeEditor == 'workbench.editor.browser'", "group": "navigation" }
+      ]
+    },
     "configuration": {
       "title": "VS Control",
       "properties": {

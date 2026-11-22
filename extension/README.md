@@ -45,5 +45,6 @@ In the Command Palette:
 - **VS Control: Show Connection and Tools** — inspect the bridge and available tools.
 - **VS Control: Restart Bridge** — restart the local connection.
 - **VS Control: Stop Bridge** — stop the local connection.
+- **VS Control: Pick Element for Claude** — pick an element on the active shared browser page (<kbd>Ctrl+Alt+C</kbd> / <kbd>Cmd+Alt+C</kbd>, or the title-bar button). It is written to `.vs-control/picks/` and added to the Claude Code prompt when the Claude Code extension is installed.
 
 Claude and the bridge must run on the same host as the same user. Available native tools depend on VS Code and installed extensions.

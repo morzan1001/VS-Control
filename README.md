@@ -6,7 +6,7 @@ Works with the **Claude Code CLI and VS Code extension** through a local MCP bri
 
 ## What it does
 
-- **Browser:** Open pages, click, type, read content, and take screenshots in VS Code's integrated browser.
+- **Browser:** Open pages, click, type, read content, and take screenshots in VS Code's integrated browser. Pick an element on the page and send it to Claude.
 - **Tests:** Run tests, inspect failures, and use the Test Explorer.
 - **Editor:** Read diagnostics and selections, open files, and find symbols, definitions, and references.
 - **Tasks and debugging:** Run configured tasks, check exit codes, and start or stop named debug configurations.
@@ -57,6 +57,12 @@ Read the active file's diagnostics and find the selected symbol's definition.
 ## Settings
 
 For browser tools, enable `workbench.browser.enableChatTools` in VS Code. Existing tabs follow **Share with Agent** controls and native confirmations. Running tests requires a test extension for your project.
+
+### Pick an element
+
+On a page shared with the agent, click the **Pick Element for Claude** button in the browser's title bar, or press <kbd>Ctrl+Alt+C</kbd> (<kbd>Cmd+Alt+C</kbd> on macOS). Hover to highlight, click to pick, or press <kbd>Esc</kbd> to cancel. The click is not passed to the page.
+
+The element's tag, text, HTML, CSS selector and page URL are written to `.vs-control/picks/` in the workspace (a self-ignoring folder that keeps the last 20 picks). In the Claude Code VS Code extension the file is added to the prompt as an @-mention. Claude can also read the last pick with the `vscode_picked_element` tool.
 
 Browser and testing tools are enabled by default. To also expose available terminal, notebook, and code tools, add this to your VS Code user settings:
 
