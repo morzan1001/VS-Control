@@ -29,7 +29,10 @@ const BUILTINS = [
   definition('vscode_tasks', 'List workspace tasks and task executions observed by this bridge. Task IDs are valid until the next list call.', {}, [], true),
   definition('vscode_run_task', 'Run a task ID returned by vscode_tasks in the real VS Code task system. Returns an execution ID; inspect vscode_task_status for completion.', { id: string }, ['id']),
   definition('vscode_task_status', 'Read a task execution status, including exit code when supplied by the task provider. Does not read historical terminal output.', { id: string }, ['id'], true),
-  definition('vscode_debug', 'List named launch configurations and current debug session; start a configured session or stop the active session. Start returning true means started, not successful program execution.', { action: { type: 'string', enum: ['list', 'start', 'stop'] }, name: string, folder: string }, ['action']),
+  definition('vscode_debug', 'List named launch configurations and current debug session; start a configured session or stop the active session. Start returning true means started, not successful program execution. Breakpoints: breakpoints lists them; setBreakpoint and removeBreakpoints take path and a zero-based line (condition optional). A paused session: stack lists threads and frames; variables takes a frameId (its scopes) or a variablesReference (to expand); evaluate runs expression in frameId, with debug-console semantics, so it can change program state. Lines and columns are zero-based.', {
+    action: { type: 'string', enum: ['list', 'start', 'stop', 'breakpoints', 'setBreakpoint', 'removeBreakpoints', 'stack', 'variables', 'evaluate'] }, name: string, folder: string,
+    path: string, line: integer, column: integer, condition: string, threadId: integer, frameId: integer, variablesReference: integer, expression: string
+  }, ['action']),
   definition('vscode_command', 'Execute a permitted VS Code UI/test command. testing.runAll dispatches a test run but does not provide results: prefer native runTests and testFailure. Use vscode_capabilities for permitted commands.', { command: string, arguments: { type: 'array', maxItems: 20 } }, ['command'])
 ];
 
@@ -47,6 +50,42 @@ function validate(args, schema, location = 'arguments') {
     if (!Number.isSafeInteger(args) || args < (schema.minimum || 0)) throw new Error(`${location} must be a nonnegative integer.`);
   } else if (schema.type && typeof args !== schema.type) throw new Error(`${location} must be ${schema.type}.`);
   if (schema.enum && !schema.enum.includes(args)) throw new Error(`Unsupported ${location}.`);
+}
+const breakpointInfo = b => ({
+  id: b.id, enabled: b.enabled, condition: b.condition, hitCondition: b.hitCondition, logMessage: b.logMessage,
+  ...(b.location ? { uri: b.location.uri.toString(), line: b.location.range.start.line, column: b.location.range.start.character } : { functionName: b.functionName })
+});
+// Debug Adapter Protocol requests on a paused session. VS Code asks adapters for
+// one-based lines and columns; report them zero-based like every other tool.
+async function inspect(session, args) {
+  const zero = n => typeof n === 'number' ? n - 1 : n;
+  const clip = value => typeof value === 'string' && value.length > 2000 ? `${value.slice(0, 2000)}…` : value;
+  const variables = async reference => (await session.customRequest('variables', { variablesReference: reference })).variables.slice(0, 200)
+    .map(v => ({ name: v.name, value: clip(v.value), type: v.type, variablesReference: v.variablesReference }));
+  const about = { session: { id: session.id, name: session.name, type: session.type } };
+  if (args.action === 'stack') {
+    const { threads = [] } = await session.customRequest('threads');
+    const result = [];
+    for (const thread of threads.filter(t => args.threadId === undefined || t.id === args.threadId).slice(0, 20)) {
+      try {
+        const trace = await session.customRequest('stackTrace', { threadId: thread.id, startFrame: 0, levels: 20 });
+        result.push({ id: thread.id, name: thread.name, totalFrames: trace.totalFrames, frames: trace.stackFrames.map(f => ({ id: f.id, name: f.name, path: f.source?.path, line: zero(f.line), column: zero(f.column) })) });
+      } catch (error) { result.push({ id: thread.id, name: thread.name, paused: false, note: error.message }); }
+    }
+    return { ...about, threads: result };
+  }
+  if (args.action === 'variables') {
+    if (args.variablesReference !== undefined) return { ...about, variables: await variables(args.variablesReference) };
+    if (args.frameId === undefined) throw new Error('Supply a frameId from action=stack, or a variablesReference.');
+    const { scopes } = await session.customRequest('scopes', { frameId: args.frameId });
+    const result = [];
+    // Always expand the innermost scope: js-debug marks an ES module's scope expensive.
+    for (const [index, scope] of scopes.slice(0, 10).entries()) result.push({ name: scope.name, variablesReference: scope.variablesReference, expensive: !!scope.expensive, ...(scope.expensive && index ? {} : { variables: await variables(scope.variablesReference) }) });
+    return { ...about, scopes: result };
+  }
+  if (!args.expression) throw new Error('evaluate needs an expression.');
+  const result = await session.customRequest('evaluate', { expression: args.expression, frameId: args.frameId, context: 'repl' });
+  return { ...about, result: clip(result.result), type: result.type, variablesReference: result.variablesReference };
 }
 function createAdapter(vscode, subscriptions = []) {
   let listedTasks = new Map();
@@ -204,6 +243,24 @@ function createAdapter(vscode, subscriptions = []) {
             const session = vscode.debug.activeDebugSession;
             if (!session) return text({ stopped: false, reason: 'No active debug session.' });
             await vscode.debug.stopDebugging(session); return text({ stopped: true, id: session.id });
+          }
+          if (args.action === 'breakpoints') return text({ breakpoints: vscode.debug.breakpoints.map(breakpointInfo) });
+          if (args.action === 'setBreakpoint' || args.action === 'removeBreakpoints') {
+            const uri = await uriFor(args.path);
+            if (args.action === 'removeBreakpoints') {
+              const matches = vscode.debug.breakpoints.filter(b => b.location?.uri.toString() === uri.toString() && (args.line === undefined || b.location.range.start.line === args.line));
+              vscode.debug.removeBreakpoints(matches);
+              return text({ removed: matches.map(breakpointInfo) });
+            }
+            if (args.line === undefined) throw new Error('setBreakpoint needs a zero-based line.');
+            const breakpoint = new vscode.SourceBreakpoint(new vscode.Location(uri, new vscode.Position(args.line, args.column || 0)), true, args.condition);
+            vscode.debug.addBreakpoints([breakpoint]);
+            return text(breakpointInfo(breakpoint));
+          }
+          if (['stack', 'variables', 'evaluate'].includes(args.action)) {
+            const session = vscode.debug.activeDebugSession;
+            if (!session) throw new Error('No active debug session; start one with vscode_debug action=start.');
+            return text(await inspect(session, args));
           }
           const folder = args.folder ? folders().find(f => f.uri.fsPath === args.folder) : folders().length === 1 ? folders()[0] : null;
           if (!folder || !args.name) throw new Error('Supply a launch configuration name and an unambiguous workspace folder.');

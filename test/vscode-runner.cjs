@@ -129,6 +129,28 @@ exports.run = async () => {
       assert.ok(!result.isError, JSON.stringify(result));
       assert.equal(JSON.parse(result.content[0].text).dispatched, 'workbench.view.extension.test');
     });
+    await check('debugger pauses at a bridge breakpoint and inspects the frame', async () => {
+      const target = path.join(cwd, 'debug-target.js');
+      const debug = async args => {
+        const result = await client.call('vscode_debug', args, signal());
+        assert.ok(!result.isError, JSON.stringify(result));
+        return JSON.parse(result.content[0].text);
+      };
+      assert.equal((await debug({ action: 'setBreakpoint', path: target, line: 2 })).line, 2);
+      assert.ok(await vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], { type: 'node', request: 'launch', name: 'VS Control debug fixture', program: target, console: 'internalConsole' }));
+      let frame;
+      const deadline = Date.now() + 20000;
+      while (!frame && Date.now() < deadline) {
+        await new Promise(resolve => setTimeout(resolve, 250));
+        try { frame = (await debug({ action: 'stack' })).threads.flatMap(t => t.frames || []).find(f => f.path?.endsWith('debug-target.js')); } catch { /* not paused yet */ }
+      }
+      assert.ok(frame, 'paused in debug-target.js'); assert.equal(frame.line, 2);
+      const scopes = (await debug({ action: 'variables', frameId: frame.id })).scopes;
+      assert.ok(scopes.some(s => (s.variables || []).some(v => v.name === 'total' && v.value === '6')), JSON.stringify(scopes));
+      assert.equal((await debug({ action: 'evaluate', expression: 'total * 2', frameId: frame.id })).result, '12');
+      assert.equal((await debug({ action: 'removeBreakpoints', path: target })).removed.length, 1);
+      await debug({ action: 'stop' });
+    });
     await check('real task execution reports its process exit code', async () => {
       const task = new vscode.Task({ type: 'vs-control-fixture' }, vscode.TaskScope.Workspace, 'Fixture task', 'VS Control', new vscode.ProcessExecution('/usr/bin/true'));
       disposables.push(vscode.tasks.registerTaskProvider('vs-control-fixture', { provideTasks: () => [task], resolveTask: t => t }));

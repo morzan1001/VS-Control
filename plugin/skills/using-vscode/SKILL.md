@@ -25,6 +25,6 @@ For a web interface with an observable result, use the integrated browser to ver
 - If only `vscode_command` is available, `workbench.view.extension.test` opens the test view and `testing.runAll` requests a run. A dispatch acknowledgement proves neither completion nor success. Never label it a passing test run.
 - `vscode_tasks` lists configured tasks. `vscode_run_task` returns an execution ID. Inspect `vscode_task_status` to distinguish running, ended and completed with an exit code. An unknown exit code is not success. Shell output is not available from this helper; use an enabled native terminal tool or the user's normal CLI if output is needed.
 - If discovery returns no tests, report this once and use the project's configured test command. Do not create a duplicate test controller or repeatedly poll unavailable capabilities.
-- `vscode_debug` starts named configurations or stops the active session. This is not full debugger-variable/stack inspection.
+- `vscode_debug` starts named configurations or stops the active session, sets and removes breakpoints, and on a paused session reads the stack (`stack`), a frame's scopes or a variable (`variables`) and evaluates expressions (`evaluate`, which can change program state).
 
 Report what you actually observed, including failures or unavailable verification. Context hooks encourage tool selection; they never override the user's instructions or automatically approve a tool.
