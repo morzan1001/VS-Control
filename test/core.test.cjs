@@ -63,7 +63,19 @@ test('native schemas are preserved and screenshots remain MCP images', () => {
   const result = native.convertResult({ content: [{ value: 'Page' }, { mimeType: 'image/png', data: Uint8Array.from([1, 2, 3]) }] });
   assert.deepEqual(result.content, [{ type: 'text', text: 'Page' }, { type: 'image', mimeType: 'image/png', data: 'AQID' }]);
 });
+test('Prompt-TSX trees flatten to their text, honouring line breaks', () => {
+  // Shape observed from copilot_readFile and copilot_getErrors in VS Code 1.147.
+  const leaf = (text, lineBreakBefore) => ({ type: 2, priority: 1, text, references: [], lineBreakBefore });
+  const piece = (...children) => ({ type: 1, ctor: 2, ctorName: 'x', children, props: {}, references: [] });
+  const node = piece(piece(leaf('# Title\n', true)), piece(leaf('\n', true)), piece(leaf('Body', true), leaf(' text', false)), leaf('Tail', true));
+  const result = native.convertResult({ content: [{ value: { node } }] });
+  assert.deepEqual(result, { content: [{ type: 'text', text: '# Title\n\nBody text\nTail' }] });
+  assert.equal(native.promptText(piece(leaf('ok', true))), 'ok');
+  assert.equal(native.promptText(piece(leaf('a'), { type: 3, value: {} })), undefined);
+});
 test('unknown native parts and Prompt-TSX are explicitly unsupported, never discarded', () => {
   const result = native.convertResult({ content: [{ value: { type: 'piece', children: [{ text: 'failing test' }] } }] });
   assert.equal(result.isError, true); assert.match(result.content[0].text, /failing test/);
+  const opaque = native.convertResult({ content: [{ value: { node: { type: 1, children: [{ type: 2, text: 'failing test' }, { type: 3, value: { mimeType: 'image/png' } }] } } }] });
+  assert.equal(opaque.isError, true); assert.match(opaque.content[0].text, /unsupported renderer[\s\S]*failing test/);
 });

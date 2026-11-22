@@ -124,7 +124,7 @@ function createAdapter(vscode, subscriptions = []) {
             'Native runTests/testFailure supply test results when available; UI commands only dispatch actions.',
             'Foreign test observers/results are not read through proposed APIs.',
             'Tasks and debug starts report dispatch/status, not proof of successful execution.',
-            'Prompt-TSX results are returned as explicitly unsupported raw data, not silently flattened.',
+            'Prompt-TSX results are flattened to their text. A result holding non-text parts is returned as explicitly unsupported raw data.',
             'Native tool failures may be encoded in text; read the content before claiming success.'
           ]
         });

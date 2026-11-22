@@ -25,18 +25,34 @@ function definitions(tools, settings) {
     inputSchema: t.inputSchema || { type: 'object', properties: {} }
   }));
 }
+// Prompt-TSX parts arrive as their JSON tree: pieces (type 1) wrap text (type 2)
+// and opaque values (type 3). Join the text the way the renderer does; a tree
+// holding anything else is not flattened.
+function promptText(node) {
+  let out = '';
+  const walk = n => {
+    if (n?.type === 2 && typeof n.text === 'string') {
+      if (n.lineBreakBefore && out && !out.endsWith('\n')) out += '\n';
+      out += n.text; return true;
+    }
+    return n?.type === 1 && Array.isArray(n.children) && n.children.every(walk);
+  };
+  return walk(node) ? out : undefined;
+}
 function convertResult(result) {
   const content = [];
   let unsupported = false;
+  let flat;
   for (const part of result?.content || []) {
     if (typeof part?.value === 'string') content.push({ type: 'text', text: part.value });
     else if (part?.data instanceof Uint8Array && typeof part.mimeType === 'string') {
       if (part.mimeType.startsWith('image/')) content.push({ type: 'image', mimeType: part.mimeType, data: Buffer.from(part.data).toString('base64') });
       else if (part.mimeType.startsWith('text/') || part.mimeType === 'application/json') content.push({ type: 'text', text: Buffer.from(part.data).toString('utf8') });
       else { unsupported = true; content.push({ type: 'text', text: `Unsupported native binary result: ${part.mimeType}.` }); }
-    } else {
-      // Prompt-TSX is a rendering tree, NOT text. Preserve it explicitly instead
-      // of silently dropping failure messages, references or images in the tree.
+    } else if (typeof (flat = promptText(part?.value?.node)) === 'string') content.push({ type: 'text', text: flat });
+    else {
+      // A tree with non-text parts, or an unknown part. Preserve it explicitly
+      // instead of silently dropping failure messages, references or images.
       unsupported = true;
       content.push({ type: 'text', text: `Native result requires an unsupported renderer (e.g. Prompt-TSX). Raw data follows; this is not a rendered result:\n${JSON.stringify(part)}` });
     }
@@ -44,4 +60,4 @@ function convertResult(result) {
   if (!content.length) content.push({ type: 'text', text: 'Native tool returned no content. This alone does not establish success.' });
   return { content, ...(unsupported ? { isError: true } : {}) };
 }
-module.exports = { GROUPS, groupFor, allowed, recursive, mcpName, definitions, convertResult };
+module.exports = { GROUPS, groupFor, allowed, recursive, mcpName, definitions, promptText, convertResult };
